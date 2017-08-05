@@ -15,6 +15,7 @@ using System.ComponentModel;
 using SpeedBump.Versioning;
 using log4net;
 using SpeedBump.Deployment;
+using System.Threading.Tasks;
 
 namespace SpeedBump
 {
@@ -98,6 +99,7 @@ namespace SpeedBump
         private void runAll_BT_Click(object sender, RoutedEventArgs e)
         {
             log.Debug("[User Action] " + sender.ToString());
+
             string bumpChoice = "";
             DeploymentManager bumper = new DeploymentManager(source, item);
             bumper.Prepare();
@@ -105,8 +107,21 @@ namespace SpeedBump
             if (majorBump_RB.IsChecked == true) { bumpChoice = "Major"; }
             else if (minorBump_RB.IsChecked == true) { bumpChoice = "Minor"; }
             else if (trivialBump_RB.IsChecked == true) { bumpChoice = "Trivial"; }
+            bumper.Bump(bumpChoice);
+            Task<string> t1 = Task.Factory.StartNew(() =>
+            {
+                bumper.Bump(bumpChoice);
+                MyFile assembly = ver.OpenAssemblyInfo(source.BaseDir + item.BaseDir + @"\" + item.StageDir);
+                Versioning.Version itemVersion = ver.getchildVersion(assembly);
+                return itemVersion.getVersion();
+            });
+            Task t1_cont = t1.ContinueWith((antecedent) => {
+                Version = antecedent.Result;
+
+                }, TaskScheduler.FromCurrentSynchronizationContext()); 
             try
             {
+
                 bumper.Build();
             }
             catch(Exception ex) { MessageBox.Show(ex.ToString()); }
