@@ -115,21 +115,11 @@ namespace SpeedBump.Deployment
         public string Build()
         {
             log.Debug("[User Action] Build");
-            string pattern = "[1-9]+?[0-9]?[ ][W][a][r]";
             string command = source.CompileDir + @"\msbuild.exe";
             string arguments = "\"" + source.BaseDir + item.BaseDir +"\\" + item.Project + ".sln\" /p:Configuration=Debug";
             log.Debug("command="+command);
             log.Debug("arguments=" + arguments);
             string result = run(command, arguments);
-           /* if(result.Contains("Build FAILED") || result.Contains("MSBUILD : error"))
-            {
-                throw new Exception("Build Failed");
-            }
-            Regex warningCheck = new Regex(pattern);
-            if (warningCheck.IsMatch(result))
-            {
-                throw new Exception("Warning: Check Log");
-            }*/
             log.Debug(result);
             return result;
         }

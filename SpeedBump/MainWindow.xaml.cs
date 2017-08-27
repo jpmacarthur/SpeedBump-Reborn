@@ -32,23 +32,19 @@ namespace SpeedBump
         public bool reportsToggle = true;
         public delegate void NewReportEventHandler(object sender, NewReportEventArgs args);
         public delegate void StartTaskEventHandler(object sender, EventArgs args);
-        public event NewReportEventHandler StatusUpdated;
-        public event EventHandler StartTask;
         public Dictionary<string, string> reportsHolder = new Dictionary<string, string>();
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public MainWindow()
         {
             Logger.Setup();
-
             InitializeComponent();
             DataContext = this;
             this.status_BT.ButtonClicked += Status_BT_ButtonClicked;
             Reload();
-
         }
-
         private void Status_BT_ButtonClicked(object sender, EventArgs e)
         {
+            log.Debug("[USER ACTION] Status Button Clicked");
             status_BT.reports_TC.Items.Clear();
             foreach (ProjectControl child in projectRowsPanel.Children)
             {
@@ -63,9 +59,7 @@ namespace SpeedBump
                     tab.Header = child.projectLabel.Content;
                     tab.Content = scroll;
                     status_BT.reports_TC.Items.Add(tab);
-                    status_BT.reports_TC.SelectedIndex = 0;
-
-                    //TODO Add logic for running all 
+                    status_BT.reports_TC.SelectedIndex = 0; 
                 }
             }
             status_BT.reports_TC.Height = this.ActualHeight;
@@ -83,7 +77,6 @@ namespace SpeedBump
                 reportsToggle = !reportsToggle;
             }
         }
-
         public void Reload()
         {
             log.Debug("Reload called");
@@ -97,6 +90,7 @@ namespace SpeedBump
                 row.StatusUpdated += Row_StatusUpdated;
                 row.StartTask += Row_StartTask;
                 row.EndTask += Row_EndTask;
+                row.UpdateUI += Row_UpdateUI;
                 row.Reload(item, source);
                 row.trivialBump_RB.GroupName = "bumpGroup" + item.Project;
                 row.minorBump_RB.GroupName = "bumpGroup" + item.Project;
@@ -111,8 +105,14 @@ namespace SpeedBump
             }
         }
 
+        private void Row_UpdateUI(object sender, EventArgs e)
+        {
+            runAllProjects.IsEnabled = !runAllProjects.IsEnabled;
+        }
+
         private void Row_StatusUpdated(object sender, NewReportEventArgs e)
         {
+            log.Debug("[Event Raised] Status Updated");
             string pattern = "[1-9]+?[0-9]?[ ][W][a][r]";
             Regex warningCheck = new Regex(pattern);
             if (e.Report.Contains("Build FAILED") || e.Report.Contains("MSBUILD : error"))
@@ -144,15 +144,15 @@ namespace SpeedBump
         {
             runAllProjects.IsEnabled = true;
         }
-
         private void runAllProjects_Click(object sender, RoutedEventArgs e)
         {
             log.Debug("[USER ACTION] Run all projects called");
             List<Task> TaskList = new List<Task>();
+            runAllProjects.IsEnabled = false;
             foreach (ProjectControl child in projectRowsPanel.Children)
             {
-                child.runAll_BT.IsEnabled = false;
-                child.run_BT.IsEnabled = false;
+                child.RunAllButton.IsEnabled = false;
+                child.RunButton.IsEnabled = false;
                 if (child.runAll_CB.IsChecked == true)
                 {
                     string bumpChoice = "";
@@ -179,17 +179,15 @@ namespace SpeedBump
                         bumper.Deploy();
                     });
 
-                    Task runAll_cont = runAll.ContinueWith((antecedent) =>
+                    Task runAllCont = runAll.ContinueWith((antecedent) =>
                     {
                         if (reportsHolder.ContainsKey(child.projectLabel.ToString()))
                             {
                                 reportsHolder[child.projectLabel.ToString()] = child.Report;
                             }
                             else reportsHolder.Add(child.projectLabel.ToString(), child.Report);
-                        StatusCheck check = new StatusCheck(reportsHolder);
-                        updateStatus(check);
                     }, TaskScheduler.FromCurrentSynchronizationContext()); 
-                     TaskList.Add(runAll_cont);
+                     TaskList.Add(runAllCont);
                 } }
             if (TaskList.Count > 0)
             {
@@ -198,19 +196,21 @@ namespace SpeedBump
                     Task.WaitAll(TaskList.ToArray());
                     StatusCheck check = new StatusCheck(reportsHolder);
                     updateStatus(check);
+                    runAllProjects.IsEnabled = true;
                     foreach (ProjectControl child in projectRowsPanel.Children)
                     {
-                        child.runAll_BT.IsEnabled = true;
-                        child.run_BT.IsEnabled = true;
+                        child.RunAllButton.IsEnabled = true;
+                        child.RunButton.IsEnabled = true;
                     }
                 }, new System.Threading.CancellationToken(), TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
             }
             else
             {
+                runAllProjects.IsEnabled = false;
                 foreach (ProjectControl child in projectRowsPanel.Children)
                 {
-                    child.runAll_BT.IsEnabled = true;
-                    child.run_BT.IsEnabled = true;
+                    child.RunAllButton.IsEnabled = true;
+                    child.RunButton.IsEnabled = true;
                 }
             }
          }

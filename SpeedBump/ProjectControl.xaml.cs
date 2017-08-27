@@ -35,6 +35,7 @@ namespace SpeedBump
         public event NewReportEventHandler StatusUpdated;
         public event EventHandler StartTask;
         public event EventHandler EndTask;
+        public event EventHandler UpdateUI;
 
         public Task runAll;
         public ProjectControl()
@@ -64,8 +65,8 @@ namespace SpeedBump
         private void run_BT_Click(object sender, RoutedEventArgs e)
         {
             log.Debug("[User Action] " + sender.ToString());
-            runAll_BT.IsEnabled = false;
-            run_BT.IsEnabled = false;
+            RunAllButton.IsEnabled = false;
+            RunButton.IsEnabled = false;
             if (this.StartTask != null)
             {
                 this.StartTask(this, new EventArgs());
@@ -84,8 +85,8 @@ namespace SpeedBump
                     });
                     Task prepare_ui = prepare.ContinueWith((antecedent) =>
                     {
-                        runAll_BT.IsEnabled = true;
-                        run_BT.IsEnabled = true;
+                        RunAllButton.IsEnabled = true;
+                        RunButton.IsEnabled = true;
                         if (this.EndTask != null)
                         {
                             this.EndTask(this, new EventArgs());
@@ -98,8 +99,8 @@ namespace SpeedBump
                     });
                     Task clean_ui = clean.ContinueWith((antecedent) =>
                     {
-                        runAll_BT.IsEnabled = true;
-                        run_BT.IsEnabled = true;
+                        RunAllButton.IsEnabled = true;
+                        RunButton.IsEnabled = true;
                         if (this.EndTask != null)
                         {
                             this.EndTask(this, new EventArgs());
@@ -120,8 +121,8 @@ namespace SpeedBump
                         Timestamp = DateTime.UtcNow;
                         item.Timestamp = Timestamp;
                         source.Save();
-                        runAll_BT.IsEnabled = true;
-                        run_BT.IsEnabled = true;
+                        RunAllButton.IsEnabled = true;
+                        RunButton.IsEnabled = true;
                         if (this.EndTask != null)
                         {
                             this.EndTask(this, new EventArgs());
@@ -143,8 +144,8 @@ namespace SpeedBump
                         {
                             this.EndTask(this, new EventArgs());
                         }
-                        runAll_BT.IsEnabled = true;
-                        run_BT.IsEnabled = true;
+                        RunAllButton.IsEnabled = true;
+                        RunButton.IsEnabled = true;
                     }, TaskScheduler.FromCurrentSynchronizationContext());
                     break;
                 case "Deploy":
@@ -157,8 +158,8 @@ namespace SpeedBump
                         {
                             this.EndTask(this, new EventArgs());
                         }
-                        runAll_BT.IsEnabled = true;
-                        run_BT.IsEnabled = true;
+                        RunAllButton.IsEnabled = true;
+                        RunButton.IsEnabled = true;
                     }, TaskScheduler.FromCurrentSynchronizationContext());
                     break;
                 default:
@@ -169,8 +170,12 @@ namespace SpeedBump
 
         private void runAll_BT_Click(object sender, RoutedEventArgs e)
         {
-            runAll_BT.IsEnabled = false;
-            run_BT.IsEnabled = false;
+            if (this.UpdateUI != null)
+            {
+                this.UpdateUI(this, new EventArgs());
+            }
+            RunAllButton.IsEnabled = false;
+            RunButton.IsEnabled = false;
             string bumpChoice = "";
             string pjContent = projectLabel.Content.ToString();
             if (majorBump_RB.IsChecked == true) { bumpChoice = "Major"; }
@@ -199,8 +204,12 @@ namespace SpeedBump
             });
             Task runAll_cont = runAll.ContinueWith((antecedent) =>
             {
-                runAll_BT.IsEnabled = true;
-                run_BT.IsEnabled = true;
+                RunAllButton.IsEnabled = true;
+                RunButton.IsEnabled = true;
+                if (this.UpdateUI != null)
+                {
+                    this.UpdateUI(this, new EventArgs());
+                }
                 if (this.StatusUpdated != null)
                 {
                     this.StatusUpdated(this, new NewReportEventArgs(Report, pjContent));

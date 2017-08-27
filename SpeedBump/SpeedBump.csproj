@@ -88,6 +88,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="MainWindowEventHandling.cs" />
     <Compile Include="NewReportEventArgs.cs" />
     <Compile Include="StatusUpdating\StatusCheck.cs" />
     <Compile Include="StatusUpdating\StatusProperties.cs" />
@@ -177,9 +178,6 @@
     <Resource Include="Images\Success Error.png" />
     <Resource Include="Images\Success Warning.png" />
     <Resource Include="Images\Warning Error.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="icon.ico" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="icon_fxO_icon.ico" />
